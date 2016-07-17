@@ -29,6 +29,7 @@ public class PlainTextIndexer implements Indexer {
     private static final float TITLE_BOOST = 3.5f;
     private static final float KEYWORDS_BOOST = 3.0f;
     private static final float ABSTRACT_BOOST = 1.5f;
+    private static final float BODY_BOOST = 1.0f;
 
     public static void main(String[] args) throws IOException {
         String indexPath = args[0];
@@ -58,30 +59,39 @@ public class PlainTextIndexer implements Indexer {
                 Document doc = new Document();
                 fileReader = new FileReader(f);
                 BufferedReader bufferedReader = new BufferedReader(fileReader);
-                int counter = 0;
+                String linetype = null;
                 String line = null;
                 String title = "";
                 String keywords = "";
                 String abstractText = "";
+                String bodyText = "";
                 while((line = bufferedReader.readLine()) != null) {
-                    counter++;
-                    if(counter==1){
-                        title = line;
-                    } else if (counter==3){
-                        keywords = line;
+                    if((line.length() > 2) && (line.substring(0,2).equals("--")) && (line.substring(line.length() - 2).equals("--"))){
+                        linetype = line.trim();
                     } else {
-                        abstractText += " " + line;
+                    	if (linetype.equals("--TITLE--")) {
+                    		title = line;
+                    	} else if (linetype.equals("--KEYWORDS--")) {
+                    		keywords = line;
+                    	} else if (linetype.equals("--ABSTRACT--")) {
+                    		abstractText += " " + line;
+                    	} else if (linetype.equals("--BODY--")) {
+                    		bodyText += " " + line;
+                    	}
                     }
                 }
                 Field titleField = new TextField("title", title, Field.Store.YES);
                 Field keywordsField = new TextField("keywords", keywords, Field.Store.YES);
                 Field abstractField = new TextField("abstract", abstractText, Field.Store.YES);
+                Field bodyField = new TextField("body", bodyText, Field.Store.YES);
                 titleField.setBoost(TITLE_BOOST);
                 keywordsField.setBoost(KEYWORDS_BOOST);
                 abstractField.setBoost(ABSTRACT_BOOST);
+                bodyField.setBoost(BODY_BOOST);
                 doc.add(titleField);
                 doc.add(keywordsField);
                 doc.add(abstractField);
+                doc.add(bodyField);
                 doc.add(new StringField("path", f.getPath(), Field.Store.YES));
                 doc.add(new StringField("filename", f.getName(), Field.Store.YES));
                 this.indexWriter.addDocument(doc);

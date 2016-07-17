@@ -1,6 +1,5 @@
 package logic.queryparsing;
 
-import com.google.inject.Inject;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -19,6 +18,7 @@ public class FieldBoostQueryParser implements TrecQueryParser {
     private static final float TITLE_BOOST = 1.1f;
     private static final float KEYWORDS_BOOST = 1.0f;
     private static final float ABSTRACT_BOOST = 1.0f;
+    private static final float BODY_BOOST = 1.0f;
 
     private static final Map<String, Float> boostMap;
     static {
@@ -26,6 +26,7 @@ public class FieldBoostQueryParser implements TrecQueryParser {
         boostMap.put("abstract", ABSTRACT_BOOST);
         boostMap.put("title", TITLE_BOOST);
         boostMap.put("keywords", KEYWORDS_BOOST);
+        boostMap.put("body", BODY_BOOST);
     }
 
     private static final String[] docFields;
