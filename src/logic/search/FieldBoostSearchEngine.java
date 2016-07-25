@@ -15,14 +15,12 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.nio.file.Paths;
 
 public class FieldBoostSearchEngine implements SearchEngine {
 
-    private static final int TOP_N = 1000;
-    private static final double MIN_SCORE_PCT = 0.30;
+    private static final int TOP_N = 2000;
+    private static final double MIN_SCORE_PCT = 0.35;
 
     public static void main(String[] args) throws Exception {
         String indexFileName = args[0];
