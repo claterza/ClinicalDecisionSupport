@@ -34,8 +34,10 @@ public class InputQueries implements Iterable<TrecQuery> {
                 break;
             }
             String topicID = currentLine.split("=")[1];
+            String inputType = queryFileReader.readLine().trim();
             String inputQuery = queryFileReader.readLine();
-            TrecQuery trecQuery = new TrecQuery(topicID, inputQuery);
+            String[] query = {inputType,inputQuery,inputQuery,inputQuery,inputQuery,inputQuery};
+            TrecQuery trecQuery = new TrecQuery(topicID, query);
             this.trecQueries.add(trecQuery);
         }
     }

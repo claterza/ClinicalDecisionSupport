@@ -5,6 +5,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.Query;
 
 import java.util.HashMap;
@@ -45,5 +46,16 @@ public class FieldBoostQueryParser implements TrecQueryParser {
 
     public Query parseQueryText(String queryText) throws ParseException {
         return this.parser.parse(queryText);
+    }
+
+    public Query parseQueryText(String[] query) throws ParseException {
+    	String[] fields = {"types","abstract","title","keywords","body","categories"};
+    	BooleanClause.Occur[] flags = {BooleanClause.Occur.MUST,
+    			BooleanClause.Occur.SHOULD,
+    			BooleanClause.Occur.SHOULD,
+    			BooleanClause.Occur.SHOULD,
+    			BooleanClause.Occur.SHOULD,
+    			BooleanClause.Occur.SHOULD};
+        return this.parser.parse(query, fields, flags, analyzer);
     }
 }

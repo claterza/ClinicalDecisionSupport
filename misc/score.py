@@ -45,7 +45,8 @@ def get_results(topics_in,topics_gold):
 	return precision,recall,r_precision,p_10
 
 def output_results(precision,recall,r_prec,p_10):
-	print("Topic#\tPrecision\tRecall\tR-prec\tP@10")
+	print("Topic#\tPrecision\tRecall\tR-prec")
+	#print("Topic#\tPrecision\tRecall\tR-prec\tP@10")
 
 	precision_total = float(0)
 	recall_total = float(0)
@@ -57,13 +58,14 @@ def output_results(precision,recall,r_prec,p_10):
 		recall_total += recall[topic]
 		r_prec_total += r_prec[topic]
 		p_10_total += p_10[topic]
-		print(str(topic) + "\t" + str(precision[topic]) + "\t" + str(recall[topic]) + "\t" + str(r_prec[topic]) + "\t" + str(p_10[topic]))
+		print(str(topic) + "\t" + str(precision[topic]) + "\t" + str(recall[topic]) + "\t" + str(r_prec[topic]))
+		#print(str(topic) + "\t" + str(precision[topic]) + "\t" + str(recall[topic]) + "\t" + str(r_prec[topic]) + "\t" + str(p_10[topic]))
 
 	print("---------------------------------------")
 	print("Average Precision: " + str(precision_total/float(len(precision))))
 	print("Average Recall: " + str(recall_total/float(len(recall))))
 	print("Average R-prec: " + str(r_prec_total/float(len(r_prec))))
-	print("Average P@10: " + str(p_10_total/float(len(p_10))))
+	#print("Average P@10: " + str(p_10_total/float(len(p_10))))
 
 
 
