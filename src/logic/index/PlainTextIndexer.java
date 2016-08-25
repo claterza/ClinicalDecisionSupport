@@ -9,6 +9,8 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
 
+import models.BoostedDocumentBuilder;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -67,7 +69,6 @@ public class PlainTextIndexer implements Indexer {
         for (File f : this.fileList) {
             FileReader fileReader = null;
             try {
-                Document doc = new Document();
                 fileReader = new FileReader(f);
                 BufferedReader bufferedReader = new BufferedReader(fileReader);
                 String linetype = null;
@@ -95,28 +96,14 @@ public class PlainTextIndexer implements Indexer {
                     }
                 }
                 String types = "";
-                Field typeField = new TextField("types", types, Field.Store.YES);
-                Field titleField = new TextField("title", title, Field.Store.YES);
-                Field keywordsField = new TextField("keywords", keywords, Field.Store.YES);
-                Field abstractField = new TextField("abstract", abstractText, Field.Store.YES);
-                Field bodyField = new TextField("body", bodyText, Field.Store.YES);
-                Field catField = new TextField("categories", catText, Field.Store.YES);
-                typeField.setBoost(TYPE_BOOST);
-                titleField.setBoost(TITLE_BOOST);
-                keywordsField.setBoost(KEYWORDS_BOOST);
-                abstractField.setBoost(ABSTRACT_BOOST);
-                bodyField.setBoost(BODY_BOOST);
-                catField.setBoost(CAT_BOOST);
-                doc.add(typeField);
-                doc.add(titleField);
-                doc.add(keywordsField);
-                doc.add(abstractField);
-                doc.add(bodyField);
-                doc.add(catField);
-                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
-                doc.add(new StringField("filename", f.getName(), Field.Store.YES));
+                
+                // build Document and add it to index
+                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
+                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
+                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
+                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
                 this.indexWriter.addDocument(doc);
-                if (fileReader != null){
+                if (fileReader != null) {
                     bufferedReader.close();
                 }
             } catch (Exception exc) {
@@ -135,7 +122,6 @@ public class PlainTextIndexer implements Indexer {
         for (File f : this.fileList) {
             FileReader fileReader = null;
             try {
-                Document doc = new Document();
                 fileReader = new FileReader(f);
                 BufferedReader bufferedReader = new BufferedReader(fileReader);
                 String linetype = null;
@@ -165,26 +151,11 @@ public class PlainTextIndexer implements Indexer {
                 // MaxEnt multi-label Type classifier
                 Set<String> tokens = getFeatures((title + " " + keywords + " " + abstractText + " " + bodyText));
                 String types = classifyTypes(modelMaps, tokens);
-                Field typeField = new TextField("types", types, Field.Store.YES);
-                Field titleField = new TextField("title", title, Field.Store.YES);
-                Field keywordsField = new TextField("keywords", keywords, Field.Store.YES);
-                Field abstractField = new TextField("abstract", abstractText, Field.Store.YES);
-                Field bodyField = new TextField("body", bodyText, Field.Store.YES);
-                Field catField = new TextField("categories", catText, Field.Store.YES);
-                typeField.setBoost(TYPE_BOOST);
-                titleField.setBoost(TITLE_BOOST);
-                keywordsField.setBoost(KEYWORDS_BOOST);
-                abstractField.setBoost(ABSTRACT_BOOST);
-                bodyField.setBoost(BODY_BOOST);
-                catField.setBoost(CAT_BOOST);
-                doc.add(typeField);
-                doc.add(titleField);
-                doc.add(keywordsField);
-                doc.add(abstractField);
-                doc.add(bodyField);
-                doc.add(catField);
-                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
-                doc.add(new StringField("filename", f.getName(), Field.Store.YES));
+                // build Document and add it to index
+                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
+                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
+                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
+                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
                 this.indexWriter.addDocument(doc);
                 if (fileReader != null){
                     bufferedReader.close();
