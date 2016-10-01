@@ -13,7 +13,7 @@ def read_topic_file(fpath):
 			topics[topic_num].append(values[2])
 	return topics
 
-def get_results(topics_in,topics_gold):
+def get_results(topics_gold,topics_in):
 	precision = {}
 	recall = {}
 	r_precision = {}
