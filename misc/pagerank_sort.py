@@ -1,13 +1,15 @@
 import sys
 from operator import itemgetter
 
-def pagerank_sort(res_fpath,pr_fpath,out_fpath,multiply_factor):
+MULTIPLY_FACTOR = float(1000000)
+
+def pagerank_sort(res_fpath,pr_fpath,out_fpath):
 	pagerank = {}
 	with open(pr_fpath, "r") as pr:
 		for li in pr:
 			if li.split()[0] != "Doc":
 				vals = li.split()
-				pagerank[vals[0]] = float(vals[1])*multiply_factor
+				pagerank[vals[0]] = float(vals[1])*MULTIPLY_FACTOR
 		pr.close()
 	task_num = 0
 	tasks = {}
@@ -32,4 +34,4 @@ def pagerank_sort(res_fpath,pr_fpath,out_fpath,multiply_factor):
 		fo.close()
 
 
-pagerank_sort(sys.argv[1],sys.argv[2],sys.argv[3],float(sys.argv[4]))
+pagerank_sort(sys.argv[1],sys.argv[2],sys.argv[3])
