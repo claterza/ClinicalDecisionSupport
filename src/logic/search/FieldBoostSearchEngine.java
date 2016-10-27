@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 public class FieldBoostSearchEngine implements SearchEngine {
 
     private static final int TOP_N = 2000;
-    private static final double MIN_SCORE_PCT = 0.35;
+    private static final double MIN_SCORE_PCT = 0.15;
 
     public static void main(String[] args) throws Exception {
         String indexFileName = args[0];
