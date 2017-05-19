@@ -47,7 +47,7 @@ public class PlainTextIndexer implements Indexer {
         try {
             indexer = new PlainTextIndexer(indexPath);
             //indexer.indexDirectory(corpusDirectory);
-            indexer.indexDirectoryWithClassifier(corpusDirectory,args[2],args[3],args[4]);
+            indexer.indexDirectoryWithClassifier(corpusDirectory,args[2]);
             System.out.println("Added " + corpusDirectory + " to index at " + indexPath);
         } catch (Exception exc) {
         	System.out.println(exc.getMessage());
@@ -98,10 +98,11 @@ public class PlainTextIndexer implements Indexer {
                 String types = "";
                 
                 // build Document and add it to index
-                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
-                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
-                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
-                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
+                Document doc = new BoostedDocumentBuilder().build();
+//                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
+//                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
+//                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
+//                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
                 this.indexWriter.addDocument(doc);
                 if (fileReader != null) {
                     bufferedReader.close();
@@ -115,10 +116,10 @@ public class PlainTextIndexer implements Indexer {
         this.fileList.clear();
     }
     
-    public void indexDirectoryWithClassifier(String fileName, String diagnosisFile, String testFile, String treatmentFile) throws IOException {
+    public void indexDirectoryWithClassifier(String fileName, String treatmentFile) throws IOException {
         addDirectory(new File(fileName));
         // Read model files for type classification
-        List<HashMap<String, HashMap<String, Double>>> modelMaps = getModelMaps(diagnosisFile,testFile,treatmentFile);
+        HashMap<String, HashMap<String, Double>> modelMap = getModelMap(treatmentFile);
         for (File f : this.fileList) {
             FileReader fileReader = null;
             try {
@@ -148,14 +149,15 @@ public class PlainTextIndexer implements Indexer {
                     	}
                     }
                 }
-                // MaxEnt multi-label Type classifier
+                // MaxEnt Treatment classifier
                 Set<String> tokens = getFeatures((title + " " + keywords + " " + abstractText + " " + bodyText));
-                String types = classifyTypes(modelMaps, tokens);
+                String types = classifyTypes(modelMap, tokens);
                 // build Document and add it to index
-                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
-                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
-                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
-                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
+                Document doc = new BoostedDocumentBuilder().build();
+//                Document doc = new BoostedDocumentBuilder().types(types, TYPE_BOOST).
+//                    title(title, TITLE_BOOST).keywords(keywords, KEYWORDS_BOOST).
+//                    abstractText(abstractText, ABSTRACT_BOOST).body(bodyText, BODY_BOOST).
+//                    categories(catText, CAT_BOOST).fileName(f.getName()).path(f.getPath()).build();
                 this.indexWriter.addDocument(doc);
                 if (fileReader != null){
                     bufferedReader.close();
@@ -175,42 +177,36 @@ public class PlainTextIndexer implements Indexer {
         }
         for (File f : directory.listFiles()) {
             String fileName = f.getName().toLowerCase();
-            if (fileName.endsWith(".nxml")) {
+            if (fileName.endsWith(".xml")) {
                 this.fileList.add(f);
             } else if (f.isDirectory() ){
                 addDirectory(f);
             } else {
-                System.out.println("Only .nxml files can be added to this index.");
+                System.out.println("Only .xml files can be added to this index.");
             }
         }
     }
     
-    private String classifyTypes(List<HashMap<String, HashMap<String, Double>>> modelMaps, Set<String> tokens) {
-    	String types = "";
-    	for (HashMap<String, HashMap<String, Double>> modelMap : modelMaps) {
-    		String maxLabel = null;
-    		Double maxLabelValue = 0.0;
-    		for (HashMap.Entry<String, HashMap<String, Double>> model : modelMap.entrySet()) {
-    		    String label = model.getKey();
-    		    HashMap<String, Double> features = model.getValue();
-    		    Double Y = 0.0;
-    		    for (String token : tokens) {
-    		    	Double featureValue = features.get(token);
-    		    	if (featureValue != null) {
-    		    		Y += featureValue;
-    		    	}
-    		    }
-    		    Double results = Math.exp(Y);
-    		    if (results > maxLabelValue) {
-    		    	maxLabelValue = results;
-    		    	maxLabel = label;
-    		    }
+    private String classifyTypes(HashMap<String, HashMap<String, Double>> modelMap, Set<String> tokens) {
+    	String maxLabel = null;
+    	Double maxLabelValue = 0.0;
+    	for (HashMap.Entry<String, HashMap<String, Double>> model : modelMap.entrySet()) {
+    		String label = model.getKey();
+    		HashMap<String, Double> features = model.getValue();
+    		Double Y = 0.0;
+    		for (String token : tokens) {
+    			Double featureValue = features.get(token);
+    			if (featureValue != null) {
+    				Y += featureValue;
+    			}
     		}
-    		if (!maxLabel.equals("other")) {
-    			types += maxLabel + " ";
+    		Double results = Math.exp(Y);
+    		if (results > maxLabelValue) {
+    			maxLabelValue = results;
+    			maxLabel = label;
     		}
     	}
-    	return types;
+    	return maxLabel;
     }
     
     private Set<String> getFeatures(String contents) {
@@ -254,11 +250,7 @@ public class PlainTextIndexer implements Indexer {
         return outerMap;
     }
     
-    private List<HashMap<String, HashMap<String, Double>>> getModelMaps(String diagFilepath, String testFilepath, String treatFilepath) throws IOException {
-    	List<HashMap<String, HashMap<String, Double>>> modelMaps = new ArrayList<HashMap<String, HashMap<String, Double>>>();
-    	modelMaps.add(readModelFile(diagFilepath));
-    	modelMaps.add(readModelFile(testFilepath));
-    	modelMaps.add(readModelFile(treatFilepath));
-    	return modelMaps;
+    private HashMap<String, HashMap<String, Double>> getModelMap(String treatFilepath) throws IOException {
+    	return readModelFile(treatFilepath);
     }
 }

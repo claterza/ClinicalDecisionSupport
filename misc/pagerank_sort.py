@@ -1,7 +1,7 @@
 import sys
 from operator import itemgetter
 
-MULTIPLY_FACTOR = float(1000000)
+MULTIPLY_FACTOR = float(1000000000)
 
 def pagerank_sort(res_fpath,pr_fpath,out_fpath):
 	pagerank = {}

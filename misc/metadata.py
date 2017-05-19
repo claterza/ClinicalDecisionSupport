@@ -90,6 +90,14 @@ def get_metadata(input_dir,gold_standard_fpath):
 	treat_body_count = 0
 	treat_categories = {}
 
+	just_diag = 0
+	just_test = 0
+	just_treat = 0
+	diag_test = 0
+	diag_treat = 0
+	test_treat = 0
+	diag_test_treat = 0
+
 	for root, subdirs, files in os.walk(input_dir):
 		for filename in files:
 			doc_id = filename.split('.')[0]
@@ -102,7 +110,17 @@ def get_metadata(input_dir,gold_standard_fpath):
 				else:
 					total_doc_count += 1
 
+					diag_flag = False
+					test_flag = False
+					treat_flag = False
 					if (doc_id in diag_docs):
+						diag_flag = True
+					if (doc_id in test_docs):
+						test_flag = True
+					if (doc_id in treat_docs):
+						treat_flag = True
+
+					if diag_flag:
 						diag_doc_count += 1
 						if (title!=""):
 							diag_title_count += 1
@@ -117,7 +135,7 @@ def get_metadata(input_dir,gold_standard_fpath):
 								diag_categories[cat] += 1
 							else:
 								diag_categories[cat] = 1
-					if (doc_id in test_docs):
+					if test_flag:
 						test_doc_count += 1
 						if (title!=""):
 							test_title_count += 1
@@ -132,7 +150,7 @@ def get_metadata(input_dir,gold_standard_fpath):
 								test_categories[cat] += 1
 							else:
 								test_categories[cat] = 1
-					if (doc_id in treat_docs):
+					if treat_flag:
 						treat_doc_count += 1
 						if (title!=""):
 							treat_title_count += 1
@@ -147,7 +165,20 @@ def get_metadata(input_dir,gold_standard_fpath):
 								treat_categories[cat] += 1
 							else:
 								treat_categories[cat] = 1
-
+					if (diag_flag and not test_flag and not treat_flag):
+						just_diag += 1
+					if (test_flag and not treat_flag and not diag_flag):
+						just_test += 1
+					if (treat_flag and not test_flag and not diag_flag):
+						just_treat += 1
+					if (diag_flag and test_flag and not treat_flag):
+						diag_test += 1
+					if (diag_flag and treat_flag and not test_flag):
+						diag_treat += 1
+					if (test_flag and treat_flag and not diag_flag):
+						test_treat += 1
+					if (diag_flag and test_flag and treat_flag):
+						diag_test_treat += 1
 					if (title!=""):
 						total_title_count += 1
 					if keywords:
@@ -162,6 +193,14 @@ def get_metadata(input_dir,gold_standard_fpath):
 						else:
 							total_categories[cat] = 1
 
+	print("----------------------")
+	print("Diagnosis-Only Documents: " + str(just_diag))
+	print("Test-Only Documents: " + str(just_test))
+	print("Treatment-Only Documents: " + str(just_treat))
+	print("Diagnosis+Test Documents: " + str(diag_test))
+	print("Diagnosis+Treatment Documents: " + str(diag_treat))
+	print("Test+Treatment Documents: " + str(test_treat))
+	print("Diagnosis+Test+Treatment Documents: " + str(diag_test_treat))
 	print("----------------------")
 	print("Total Unique Documents: " + str(total_doc_count))
 	print("Total Titles: " + str(total_title_count) + " (" + str(float(100)*(float(total_title_count)/float(total_doc_count))) + "%)")

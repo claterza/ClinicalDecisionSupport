@@ -14,10 +14,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import org.w3c.dom.*;
-import javax.xml.parsers.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import models.BoostedDocumentBuilder;
 
 /**
  * Creates a searchable index.
@@ -31,10 +37,12 @@ public class XmlDocIndexer implements Indexer {
     private List<File> fileList = new LinkedList<>();
 
     //Boost weight constants
-    private static final float CONTENTS_BOOST = 1.0f;
-    private static final float TITLE_BOOST = 3.5f;
-    private static final float KEYWORDS_BOOST = 3.0f;
-    private static final float ABSTRACT_BOOST = 2.5F;
+    private static final float JOURNAL_TITLE_BOOST = 1.0f;
+    private static final float ARTICLE_TITLE_BOOST = 1.0f;
+    private static final float ABSTRACT_BOOST = 1.0f;
+    private static final float CHEMICAL_LIST_BOOST = 1.0f;
+    private static final float MESHHEADING_LIST_BOOST = 1.0f;
+    private static final float TYPE_BOOST = 1.0f;
 
     public static void main(String[] args) throws IOException {
         String indexPath = args[0];
@@ -59,60 +67,109 @@ public class XmlDocIndexer implements Indexer {
     public void indexDirectory(String fileName) throws IOException {
         addDirectory(new File(fileName));
         for (File f : this.fileList) {
-            Document doc = createDocument(f);
-            this.indexWriter.addDocument(doc);
+        	System.out.println("Adding file to index: " + f.getName().toLowerCase());
+            List<Document> doclist = createDocuments(f);
+            for (Document doc : doclist){
+            	this.indexWriter.addDocument(doc);
+            }
         }
         this.fileList.clear();
     }
+    
+    private List<Document> createDocuments(File f) throws IOException {
+    	List<Document> doclist = new ArrayList<Document>();
+    	try {
+        	DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+            org.w3c.dom.Document xmldoc = docBuilder.parse (f);
+            
+            // normalize text representation
+            xmldoc.getDocumentElement ().normalize ();
 
-    private Document createDocument(File f) throws IOException {
-        FileReader fileReader = null;
-        try {
+            NodeList listOfArticles = xmldoc.getElementsByTagName("PubmedArticle");
+            int totalArticles = listOfArticles.getLength();
+            System.out.println("Total # of articles in file : " + totalArticles);
 
-            NamedNodeMap attributes = getXmlAttributes(f);
-            org.apache.lucene.document.Document doc = new Document();
-            fileReader = new FileReader(f);
-            // Create fields and boost them
-            Field contentsField = new TextField("contents",
-                    attributes.getNamedItem("contents").getNodeValue(),
-                    Field.Store.YES);
-            Field titleField = new TextField("title",
-                    attributes.getNamedItem("title").getNodeValue(),
-                    Field.Store.YES);
-            Field keywordsField = new TextField("keywords",
-                    attributes.getNamedItem("keywords").getNodeValue(),
-                    Field.Store.YES);
-            Field abstractField = new TextField("abstract",
-                    attributes.getNamedItem("abstract").getNodeValue(),
-                    Field.Store.YES);
-            Field pathField = new TextField("path", f.getPath(), Field.Store.YES);
-            Field filename = new StringField("filename", f.getName(), Field.Store.YES);
-            contentsField.setBoost(CONTENTS_BOOST);
-            titleField.setBoost(TITLE_BOOST);
-            keywordsField.setBoost(KEYWORDS_BOOST);
-            abstractField.setBoost(ABSTRACT_BOOST);
-            // Add boosted fields to document
-            doc.add(contentsField);
-            doc.add(titleField);
-            doc.add(keywordsField);
-            doc.add(abstractField);
-            doc.add(pathField);
-            doc.add(filename);
-            return doc;
+            for(int s=0; s<totalArticles ; s++){
+            	Node articleNode = listOfArticles.item(s);
+                if(articleNode.getNodeType() == Node.ELEMENT_NODE){
+                	
+                	Element articleElement = (Element)articleNode;
+
+                    String pmid = getXmlValue(articleElement, "PMID");
+                    String jTitle = getXmlValue(articleElement, "Title");
+                    String aTitle = getXmlValue(articleElement, "ArticleTitle");
+                    String abstractText = getXmlValue(articleElement, "AbstractText");
+
+                    //------ Chemicals -------
+                    String chemList = getXmlValueList(articleElement, "Chemical", "NameOfSubstance", null);
+
+                    //------ MeshHeadings -------
+                    String mhList = getXmlValueList(articleElement, "MeshHeading", "DescriptorName", "QualifierName");
+                    
+                    //------ Type ------
+                    String type = "";
+                    
+                    Document doc = new BoostedDocumentBuilder().journalTitle(jTitle, JOURNAL_TITLE_BOOST).
+                            articleTitle(aTitle, ARTICLE_TITLE_BOOST).abstractText(abstractText, ABSTRACT_BOOST).
+                            chemicals(chemList, CHEMICAL_LIST_BOOST).headings(mhList, MESHHEADING_LIST_BOOST).
+                            type(type, TYPE_BOOST).fileName(pmid).path(f.getPath()).build();
+                    doclist.add(doc);
+                }
+            }
         } catch (Exception exc) {
+        	exc.printStackTrace(System.out);
             throw new IOException();
-        } finally {
-            fileReader.close();
-        }
+        } 
+    	return doclist;
     }
+    
+    
+    private String getXmlValueList(Element articleElement, String category, String field, String qualifier) {
+    	List<String> outputList = new ArrayList<String>();
+    	
+    	NodeList listOfItems = articleElement.getElementsByTagName(category);
+        int totalItems = listOfItems.getLength();
 
-    private NamedNodeMap getXmlAttributes(File f) throws Exception {
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        org.w3c.dom.Document xmlDoc = dBuilder.parse(f);
-        Element element = xmlDoc.getDocumentElement();
-        return element.getAttributes();
+        for(int t=0; t<totalItems ; t++){
+        	List<String> descList = new ArrayList<String>();
+        	Element categoryElement = (Element)listOfItems.item(t);
+            NodeList itemList = categoryElement.getElementsByTagName(field);
+            if (itemList != null && itemList.getLength() > 0) {
+            	Element itemElement = (Element)itemList.item(0);
+            	descList.add(itemElement.getFirstChild().getNodeValue().trim());
+            }
+            	
+            if (qualifier != null){
+            	NodeList listOfQuals = categoryElement.getElementsByTagName(qualifier);
+            	if (listOfQuals != null && listOfQuals.getLength() > 0){
+            		for(int q=0; q<listOfQuals.getLength() ; q++){
+            			Element qualifierElement = (Element)listOfQuals.item(q);
+            			if (qualifierElement != null){
+            	            descList.add(qualifierElement.getFirstChild().getNodeValue().trim());
+            			}
+            		}
+            	}
+            }
+            outputList.add(String.join(", ", descList));
+        }
+    	
+        String output = String.join(" | ", outputList);
+//        System.out.println(category + " : " + output);
+    	return output;
     }
+    
+    private String getXmlValue(Element articleElement, String field) {
+    	String output = "";
+    	NodeList itemList = articleElement.getElementsByTagName(field);
+    	if (itemList != null && itemList.getLength() > 0) {
+    		Element itemElement = (Element)itemList.item(0);
+    		output = itemElement.getFirstChild().getNodeValue().trim();
+//    		System.out.println(field + " : " + output);
+    	}
+    	return output;
+    }
+    
 
     private void addDirectory(File directory) {
         if (!directory.exists()) {
@@ -120,10 +177,12 @@ public class XmlDocIndexer implements Indexer {
         }
         for (File f : directory.listFiles()) {
             String fileName = f.getName().toLowerCase();
-            if (fileName.endsWith(".nxml")) {
+            if (fileName.endsWith(".xml")) {
                 this.fileList.add(f);
+            } else if (f.isDirectory() ){
+                addDirectory(f);
             } else {
-                System.out.println("Only .nxml files can be added to this index.");
+                System.out.println("Only .xml files can be added to this index.");
             }
         }
     }

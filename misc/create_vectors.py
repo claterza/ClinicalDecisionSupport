@@ -26,15 +26,12 @@ def read_gold_standard_file(fpath):
 def get_features(fpath):
 	features = set()
 	with open(fpath, "r") as fin:
-		current_field = None
 		for li in fin:
-			if not ((li.strip()[0:2]=="--") and (li.strip()[-2:]=="--")) and (current_field == "--CATEGORIES--"):
+			if not ((li.strip()[0:2]=="--") and (li.strip()[-2:]=="--")):
 				for token in nltk.word_tokenize(li.decode('utf-8')):
 					clean_token = re.sub(r'\:','',token).lower()
 					if clean_token != "":
 						features.add(clean_token)
-			else:
-				current_field = li.strip()
 		fin.close()
 	return features
 

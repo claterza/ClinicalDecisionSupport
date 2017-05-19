@@ -8,12 +8,12 @@ import org.apache.lucene.document.TextField;
 
 public class BoostedDocumentBuilder {
   
-  private Field typesField;
-  private Field titleField;
-  private Field keywordsField;
+  private Field jTitleField;
+  private Field aTitleField;
   private Field abstractField;
-  private Field bodyField;
-  private Field catField;
+  private Field chemListField;
+  private Field mhListField;
+  private Field typeField;
   private Field fileNameField;
   private Field pathField;
   
@@ -21,12 +21,12 @@ public class BoostedDocumentBuilder {
    * Parameter values default to empty string
    */
   public BoostedDocumentBuilder() {
-    this.typesField = new TextField("types", "", Field.Store.YES);
-    this.titleField = new TextField("title", "", Field.Store.YES);
-    this.keywordsField = new TextField("keywords", "", Field.Store.YES);
+    this.typeField = new TextField("type", "", Field.Store.YES);
+    this.jTitleField = new TextField("journalTitle", "", Field.Store.YES);
+    this.aTitleField = new TextField("articleTitle", "", Field.Store.YES);
     this.abstractField = new TextField("abstract", "", Field.Store.YES);
-    this.bodyField = new TextField("body", "", Field.Store.YES);
-    this.catField = new TextField("categories", "", Field.Store.YES);
+    this.chemListField = new TextField("chemList", "", Field.Store.YES);
+    this.mhListField = new TextField("mhList", "", Field.Store.YES);
     this.fileNameField = new StringField("filename", "", Field.Store.YES);
     this.pathField = new StringField("path", "", Field.Store.YES);
   }
@@ -37,14 +37,14 @@ public class BoostedDocumentBuilder {
    */
   public Document build() {
     Document doc = new Document();
+    doc.add(this.typeField);
+    doc.add(this.jTitleField);
+    doc.add(this.aTitleField);
     doc.add(this.abstractField);
-    doc.add(this.bodyField);
-    doc.add(this.catField);
+    doc.add(this.chemListField);
+    doc.add(this.mhListField);
     doc.add(this.fileNameField);
-    doc.add(this.keywordsField);
     doc.add(this.pathField);
-    doc.add(this.titleField);
-    doc.add(this.typesField);
     return doc;
   }
   
@@ -53,21 +53,21 @@ public class BoostedDocumentBuilder {
   /////////////////////////////////////////////////////////////////////////////
 
   
-  public BoostedDocumentBuilder types(String type, float boostValue) {
-    this.typesField = new TextField("types", type, Field.Store.YES);
-    this.typesField.setBoost(boostValue);
+  public BoostedDocumentBuilder type(String type, float boostValue) {
+    this.typeField = new TextField("type", type, Field.Store.YES);
+    this.typeField.setBoost(boostValue);
     return this;
   }
   
-  public BoostedDocumentBuilder title(String title, float boostValue) {
-    this.titleField = new TextField("title", title, Field.Store.YES);
-    this.titleField.setBoost(boostValue);
+  public BoostedDocumentBuilder journalTitle(String title, float boostValue) {
+    this.jTitleField = new TextField("journalTitle", title, Field.Store.YES);
+    this.jTitleField.setBoost(boostValue);
     return this;
   }
   
-  public BoostedDocumentBuilder keywords(String keywords, float boostValue) {
-    this.keywordsField = new TextField("keywords", keywords, Field.Store.YES);
-    this.keywordsField.setBoost(boostValue);
+  public BoostedDocumentBuilder articleTitle(String title, float boostValue) {
+    this.aTitleField = new TextField("articleTitle", title, Field.Store.YES);
+    this.aTitleField.setBoost(boostValue);
     return this;
   }
   
@@ -77,15 +77,15 @@ public class BoostedDocumentBuilder {
     return this;
   }
   
-  public BoostedDocumentBuilder body(String body, float boostValue) {
-    this.bodyField = new TextField("body", body, Field.Store.YES);
-    this.bodyField.setBoost(boostValue);
+  public BoostedDocumentBuilder chemicals(String chemicals, float boostValue) {
+    this.chemListField = new TextField("chemList", chemicals, Field.Store.YES);
+    this.chemListField.setBoost(boostValue);
     return this;
   }
   
-  public BoostedDocumentBuilder categories(String categories, float boostValue) {
-    this.catField = new TextField("categories", categories, Field.Store.YES);
-    this.catField.setBoost(boostValue);
+  public BoostedDocumentBuilder headings(String mheadings, float boostValue) {
+    this.mhListField = new TextField("mhList", mheadings, Field.Store.YES);
+    this.mhListField.setBoost(boostValue);
     return this;
   }
   
