@@ -1,87 +1,94 @@
-# ClinicalDecisionSupport
+# PrecisionMedicine
 
 TODO:
-
-- polish XML parsing in XmlDocIndexer
 - optimize boost weights (NN?)
-- Better query formation
+- query expansion (negex, metamap)
 
 **---SYSTEM RUN OVERVIEW---**
 
 **-SETUP-**
 
-Download TREC document collection (curr. 2015): http://trec-cds.appspot.com/2015.html#documents
+Download TREC document collection (curr. 2017): http://trec-cds.appspot.com/2017.html#documents
 
-Download TREC topics file (curr. 2015): http://trec-cds.appspot.com/2015.html#topics
-
-Download TREC gold standard evaluation file (curr. 2015): http://trec-cds.appspot.com/qrels-treceval-2015.txt
-
-
-Preprocess document collection:
-
-	python preprocess.py [collection_xml_directory] [output_preprocessed_directory]
+Download TREC topics file (curr. 2015): http://trec-cds.appspot.com/2017.html#topics
 	
 	
-**-MAXENT CLASSIFIER-**
+**-MAXENT TYPE CLASSIFIER-**
 
-Generate gold standard type vector files:
+Model file for treatment/unknown -type classifier (based on past TREC data) is included in repo.
+To recreate file, follow the below steps.
 
-	python create_vectors.py [preprocessed_directory] [gold_standard_eval_file]
-	# generates six files: 1 training and 1 testing file for each type (diagnosis/test/treatment)
+1. Generate gold standard type vector files (1 training, 1 test):
 
-Generate mallet vector files (requires mallet):
+		python create_vectors.py [preprocessed_directory] [gold_standard_eval_file]
 
-	mallet import-svmlight --input diagnosis_train_vectors.txt --output diagnosis_train.vectors
-	mallet import-svmlight --input diagnosis_test_vectors.txt --output diagnosis_test.vectors --use-pipe-from ./diagnosis_train.vectors
-	# run again for test-type files, and again for treatment-type files
+2. Generate mallet vector files (requires mallet):
+
+		mallet import-svmlight --input treatment_train_vectors.txt --output treatment_train.vectors
+		mallet import-svmlight --input treatment_test_vectors.txt --output treatment_test.vectors --use-pipe-from ./treatment_train.vectors
 	
-Generate model files:
+3. Generate model files:
 
-	vectors2classify --training-file diagnosis_train.vectors --testing-file diagnosis_test.vectors --trainer MaxEnt --output-classifier diag1 > diag_stdout --report train:accuracy test:accuracy
-	# run again for test-type files, and again for treatment-type files
+		vectors2classify --training-file treatment_train.vectors --testing-file treatment_test.vectors --trainer MaxEnt --output-classifier treatment1 > treatment_stdout --report train:accuracy test:accuracy
 	
 	
-**-INDEX-**
+**-INDEX (ABSTRACTS)-**
 
 Create document index:
 
-	PlainTextIndexer.java [output_index_directory] [preprocessed_directory] [diagnosis_model_file] [test_model_file] [treatment_model_file]
-	
-	
-**-SEARCH-**
+	XmlDocIndexer.java [output_index_directory] [document_directory] [classifier_model_file (optional)]
 
-Use TREC topics file to create query file. Format below.
 
-	topicID=X
-	type  # test, treatment, or diagnosis
-	(diagnosis +) querystring # uses either topic summary or topic description. modified using preferred query build method (UMLS, normalization, etc).
+**-INDEX (TRIALS)-**
+**TBD**
+Create clinical trial index:
+
+	XmlTrialIndexer.java [output_index_directory] [document_directory]
+
+	
+**-QUERY-**
+
+Make sure you have a valid TREC query XML file; format below.
+
+	<topics task="2017 TREC Precision Medicine">
+ 	 <topic number="1" type="test">
+  	  <disease>Acute lymphoblastic leukemia</disease>
+	  <variant>ABL1, PTPN11</variant>
+	  <demographic>12-year-old male</demographic>
+	  <other>No relevant factors</other>
+	 </topic>
+	 ...
+	</topics>
 	
 	
-**-SEARCH-**
-
+**-SEARCH (ABSTRACTS)-**
+**NEEDS TO BE UPDATED FOR TREC2017**
 Search using Lucene:
 
 	FieldBoostSearchEngine.java [index_directory] [query_file] [output_lucene_file]
 
 
-**-PAGERANK-**
+**-PAGERANK (ABSTRACTS)-**
+**NEEDS TO BE UPDATED FOR TREC2017**
+1. Generate document set pagerank scores:
 
-Generate document set pagerank scores:
-
-	python pagerank.py [collection_xml_directory] [output_pagerank_file]
+		python pagerank.py [collection_xml_directory] [output_pagerank_file]
 	
-Add scaled pagerank scores to Lucene scores:
+2. Add scaled pagerank scores to Lucene scores:
 
-	python pagerank_sort.py [lucene_file] [pagerank_file] [output_final_score_file]
+		python pagerank_sort.py [lucene_file] [pagerank_file] [output_final_score_file]
+	
+
+**-SEARCH (TRIALS)-**
+**NEEDS TO BE UPDATED FOR TREC2017**
+Search using Lucene:
+
+	FieldBoostTrialSearchEngine.java [index_directory] [query_file] [output_lucene_file]
 	
 	
 **-EVALUATE-**
 
-Get infAP, infNDCG, and P@10 evals (+ other misc evals):
-
-	perl sample_eval.pl [gold_standard_eval_file] [final_score_file]
-	
-Get R-prec eval (+ other misc evals):
-
-	python score.py [gold_standard_eval_file] [final_score_file]
+This is the first year of the new TREC PM task, so there is no way to directly evaluate the results.
+Evaluation needs to be done manually, using personal relevancy judgements (see Evaluation discussion
+on http://trec-cds.appspot.com/2017.html for more details)
 	
