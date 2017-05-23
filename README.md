@@ -40,7 +40,9 @@ Create document index:
 
 
 **-INDEX (TRIALS)-**
+
 **TBD**
+
 Create clinical trial index:
 
 	XmlTrialIndexer.java [output_index_directory] [document_directory]
@@ -62,14 +64,18 @@ Make sure you have a valid TREC query XML file; format below.
 	
 	
 **-SEARCH (ABSTRACTS)-**
+
 **NEEDS TO BE UPDATED FOR TREC2017**
+
 Search using Lucene:
 
 	FieldBoostSearchEngine.java [index_directory] [query_file] [output_lucene_file]
 
 
 **-PAGERANK (ABSTRACTS)-**
+
 **NEEDS TO BE UPDATED FOR TREC2017**
+
 1. Generate document set pagerank scores:
 
 		python pagerank.py [collection_xml_directory] [output_pagerank_file]
@@ -80,7 +86,9 @@ Search using Lucene:
 	
 
 **-SEARCH (TRIALS)-**
+
 **NEEDS TO BE UPDATED FOR TREC2017**
+
 Search using Lucene:
 
 	FieldBoostTrialSearchEngine.java [index_directory] [query_file] [output_lucene_file]
